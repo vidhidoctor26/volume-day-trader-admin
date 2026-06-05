@@ -1,11 +1,14 @@
-export type ContactStatus = "unread" | "responded" | "archived";
-
+/** Contact inquiry as returned by GET /api/inquiries */
 export type ContactSubmission = {
   id: string;
-  name: string;
+  ticketNumber: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   message: string;
-  submittedAt: string;
-  status: ContactStatus;
+  createdAt: string;
+  updatedAt: string;
 };
+
+export type InquiryDateFilter = "all" | "today" | "week";

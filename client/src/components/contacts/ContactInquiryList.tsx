@@ -1,11 +1,12 @@
 import type { ContactSubmission } from "@/types/contact.types";
 import {
   formatSubmittedDate,
+  getInquiryName,
   getInitials,
   getMessagePreview,
 } from "@/utils/contact.utils";
 
-import ContactStatusBadge from "./ContactStatusBadge";
+import ContactTicketBadge from "./ContactTicketBadge";
 
 type ContactInquiryListProps = {
   submissions: ContactSubmission[];
@@ -26,6 +27,7 @@ export default function ContactInquiryList({
     <ul className="divide-y divide-white/[0.06] overflow-y-auto">
       {submissions.map((item) => {
         const isSelected = item.id === selectedId;
+        const name = getInquiryName(item);
 
         return (
           <li key={item.id}>
@@ -45,14 +47,14 @@ export default function ContactInquiryList({
                     : "bg-white/[0.06] text-[#94a3b8]"
                 }`}
               >
-                {getInitials(item.name)}
+                {getInitials(name)}
               </div>
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="truncate font-medium text-white">{item.name}</p>
+                  <p className="truncate font-medium text-white">{name}</p>
                   <span className="shrink-0 text-xs text-[#94a3b8]">
-                    {formatSubmittedDate(item.submittedAt)}
+                    {formatSubmittedDate(item.createdAt)}
                   </span>
                 </div>
                 <p className="truncate text-sm text-[#94a3b8]">{item.email}</p>
@@ -60,7 +62,7 @@ export default function ContactInquiryList({
                   {getMessagePreview(item.message)}
                 </p>
                 <div className="mt-2">
-                  <ContactStatusBadge status={item.status} />
+                  <ContactTicketBadge ticketNumber={item.ticketNumber} />
                 </div>
               </div>
             </button>

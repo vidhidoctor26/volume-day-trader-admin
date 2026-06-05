@@ -1,4 +1,8 @@
-import type { ContactSubmission } from "@/types/contact.types";
+import type { ContactSubmission, InquiryDateFilter } from "@/types/contact.types";
+
+export function getInquiryName(submission: ContactSubmission): string {
+  return `${submission.firstName} ${submission.lastName}`.trim();
+}
 
 export function getInitials(name: string): string {
   return name
@@ -47,32 +51,45 @@ export function getMessagePreview(message: string, maxLength = 52): string {
 export function filterSubmissions(
   submissions: ContactSubmission[],
   query: string,
-  statusFilter: "all" | "unread" | "responded",
+  dateFilter: InquiryDateFilter,
 ): ContactSubmission[] {
   const q = query.trim().toLowerCase();
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const weekStart = new Date(now);
+  weekStart.setDate(weekStart.getDate() - 7);
 
-  return submissions.filter((s) => {
-    if (statusFilter === "unread" && s.status !== "unread") return false;
-    if (statusFilter === "responded" && s.status !== "responded") return false;
-    if (s.status === "archived" && statusFilter !== "all") return false;
+  return submissions.filter((submission) => {
+    const created = new Date(submission.createdAt);
 
-    if (!q) return s.status !== "archived" || statusFilter === "all";
+    if (dateFilter === "today" && created.toDateString() !== todayStr) {
+      return false;
+    }
 
-    const haystack = `${s.name} ${s.email} ${s.phone} ${s.message}`.toLowerCase();
+    if (dateFilter === "week" && created < weekStart) {
+      return false;
+    }
+
+    if (!q) return true;
+
+    const haystack =
+      `${submission.firstName} ${submission.lastName} ${submission.email} ${submission.phone} ${submission.message} ${submission.ticketNumber}`.toLowerCase();
     return haystack.includes(q);
   });
 }
 
 export function computeContactStats(submissions: ContactSubmission[]) {
-  const active = submissions.filter((s) => s.status !== "archived");
   const today = new Date().toDateString();
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - 7);
 
   return {
-    total: active.length,
-    unread: active.filter((s) => s.status === "unread").length,
-    responded: active.filter((s) => s.status === "responded").length,
-    today: active.filter(
-      (s) => new Date(s.submittedAt).toDateString() === today,
+    total: submissions.length,
+    today: submissions.filter(
+      (s) => new Date(s.createdAt).toDateString() === today,
     ).length,
+    thisWeek: submissions.filter((s) => new Date(s.createdAt) >= weekStart)
+      .length,
+    withPhone: submissions.filter((s) => s.phone.trim().length > 0).length,
   };
 }

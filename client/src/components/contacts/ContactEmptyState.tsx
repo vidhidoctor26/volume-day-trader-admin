@@ -25,7 +25,9 @@ export default function ContactEmptyState() {
         No contact submissions yet
       </h3>
       <p className="mt-2 max-w-sm text-sm text-[#94a3b8]">
-        New inquiries from the website will appear here.
+        New inquiries from the website contact form at{" "}
+        <span className="text-[#cbd5e1]">/contact</span> will appear here once
+        submitted.
       </p>
     </div>
   );

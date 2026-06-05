@@ -38,7 +38,7 @@ export const DASHBOARD_NAV: DashboardNavEntry[] = [
   },
   {
     type: "link",
-    label: "Contact Submissions",
+    label: "Contact Inquiries",
     path: "/dashboard/contacts",
     icon: "inbox",
     subtitle:
@@ -46,28 +46,40 @@ export const DASHBOARD_NAV: DashboardNavEntry[] = [
   },
   {
     type: "group",
-    label: "Content In",
+    label: "Content Management",
     icon: "content",
     sectionLabel: "Blogs",
-    sectionBadge: "12 Drafts",
     children: [
       {
         label: "All Blogs",
         path: "/dashboard/blogs",
         icon: "document",
-        subtitle: "View and manage all published and draft blog posts.",
+        subtitle: "View and manage all blog posts.",
       },
       {
         label: "Create Blog",
         path: "/dashboard/blogs/create",
         icon: "plus",
-        subtitle: "Generate and publish SEO-optimized blog content.",
+        subtitle: "Generate AI content and create a blog via the API.",
       },
     ],
   },
 ];
 
 export function getPageMetaFromNav(pathname: string) {
+  if (pathname.includes("/dashboard/blogs/view/")) {
+    return {
+      title: "View Blog",
+      subtitle: "Read-only preview of this post.",
+    };
+  }
+  if (pathname.includes("/dashboard/blogs/edit/")) {
+    return {
+      title: "Edit Blog",
+      subtitle: "Update content, cover, and SEO.",
+    };
+  }
+
   for (const entry of DASHBOARD_NAV) {
     if (entry.type === "link") {
       if (

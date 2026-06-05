@@ -1,6 +1,8 @@
 import { configureStore } from "@reduxjs/toolkit";
 import createSagaMiddleware from "redux-saga";
 
+import { blogRtkApi } from "@/redux/blog/blogApi";
+import blogReducer from "@/redux/blog/blogSlice";
 import authReducer from "./slices/authSlice";
 import { sessionHydrateRequest } from "./slices/authSlice";
 import { rootSaga } from "./rootSaga";
@@ -13,6 +15,8 @@ const persistedAuth = getPersistedAuth();
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    blog: blogReducer,
+    [blogRtkApi.reducerPath]: blogRtkApi.reducer,
   },
   preloadedState: persistedAuth
     ? {
@@ -34,7 +38,9 @@ export const store = configureStore({
         },
       },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({ thunk: false }).concat(sagaMiddleware),
+    getDefaultMiddleware()
+      .concat(blogRtkApi.middleware)
+      .concat(sagaMiddleware),
 });
 
 sagaMiddleware.run(rootSaga);

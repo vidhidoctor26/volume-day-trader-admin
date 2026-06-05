@@ -6,8 +6,9 @@ import DashboardLayout from "@/components/layouts/DashboardLayout";
 import AllBlogsPage from "@/pages/AllBlogsPage";
 import ContactSubmissionsPage from "@/pages/ContactSubmissionsPage";
 import CreateBlogPage from "@/pages/CreateBlogPage";
+import EditBlogPage from "@/pages/EditBlogPage";
+import ViewBlogPage from "@/pages/ViewBlogPage";
 import DashboardPage from "@/pages/DashboardPage";
-import DashboardPlaceholderPage from "@/pages/DashboardPlaceholderPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import LoginPage from "@/pages/LoginPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -43,6 +44,14 @@ export default function AppRouter() {
             <Route
               path="/dashboard/blogs/create"
               element={<CreateBlogPage />}
+            />
+            <Route
+              path="/dashboard/blogs/view/:blogId"
+              element={<ViewBlogPage />}
+            />
+            <Route
+              path="/dashboard/blogs/edit/:blogId"
+              element={<EditBlogPage />}
             />
           </Route>
         </Route>

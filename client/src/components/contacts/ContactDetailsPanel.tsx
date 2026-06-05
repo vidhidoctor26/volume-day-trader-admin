@@ -1,27 +1,24 @@
 import type { ContactSubmission } from "@/types/contact.types";
-import { formatSubmittedDateTime } from "@/utils/contact.utils";
+import {
+  formatSubmittedDateTime,
+  getInquiryName,
+} from "@/utils/contact.utils";
 
-import ContactStatusBadge from "./ContactStatusBadge";
+import ContactTicketBadge from "./ContactTicketBadge";
 
 type ContactDetailsPanelProps = {
   submission: ContactSubmission;
-  onMarkResponded: () => void;
-  onArchive: () => void;
-  onDelete: () => void;
   onClose?: () => void;
   showClose?: boolean;
 };
 
 export default function ContactDetailsPanel({
   submission,
-  onMarkResponded,
-  onArchive,
-  onDelete,
   onClose,
   showClose = false,
 }: ContactDetailsPanelProps) {
   const [datePart, timePart] = formatSubmittedDateTime(
-    submission.submittedAt,
+    submission.createdAt,
   ).split("\n");
 
   return (
@@ -44,7 +41,7 @@ export default function ContactDetailsPanel({
 
       <div className="flex-1 overflow-y-auto p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
-          <ContactStatusBadge status={submission.status} />
+          <ContactTicketBadge ticketNumber={submission.ticketNumber} />
         </div>
 
         <section className="mt-6">
@@ -52,19 +49,25 @@ export default function ContactDetailsPanel({
             Contact information
           </h4>
           <div className="mt-3 space-y-1">
-            <p className="text-xl font-semibold text-white">{submission.name}</p>
+            <p className="text-xl font-semibold text-white">
+              {getInquiryName(submission)}
+            </p>
             <a
               href={`mailto:${submission.email}`}
               className="block text-sm text-[#60a5fa] hover:underline"
             >
               {submission.email}
             </a>
-            <a
-              href={`tel:${submission.phone.replace(/\s/g, "")}`}
-              className="block text-sm text-[#94a3b8] hover:text-white"
-            >
-              {submission.phone}
-            </a>
+            {submission.phone ? (
+              <a
+                href={`tel:${submission.phone.replace(/\s/g, "")}`}
+                className="block text-sm text-[#94a3b8] hover:text-white"
+              >
+                {submission.phone}
+              </a>
+            ) : (
+              <p className="text-sm text-[#64748b]">No phone provided</p>
+            )}
           </div>
         </section>
 
@@ -88,32 +91,13 @@ export default function ContactDetailsPanel({
         </section>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-white/[0.08] p-4 sm:flex-row sm:flex-wrap">
-        {submission.status !== "responded" && submission.status !== "archived" && (
-          <button
-            type="button"
-            onClick={onMarkResponded}
-            className="crm-btn-primary flex-1 rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#3b82f6] hover:shadow-[0_4px_24px_rgba(37,99,235,0.4)] sm:flex-none sm:px-6"
-          >
-            Mark as Responded
-          </button>
-        )}
-        {submission.status !== "archived" && (
-          <button
-            type="button"
-            onClick={onArchive}
-            className="crm-btn-secondary flex-1 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-white transition-all hover:-translate-y-0.5 hover:border-[#2563eb]/30 sm:flex-none"
-          >
-            Archive
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={onDelete}
-          className="flex-1 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 transition-all hover:-translate-y-0.5 hover:bg-red-500/20 sm:flex-none"
+      <div className="border-t border-white/[0.08] p-4">
+        <a
+          href={`mailto:${submission.email}?subject=Re: ${encodeURIComponent(submission.ticketNumber)}`}
+          className="crm-btn-primary inline-flex w-full items-center justify-center rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white no-underline transition-all hover:-translate-y-0.5 hover:bg-[#3b82f6] hover:shadow-[0_4px_24px_rgba(37,99,235,0.4)] sm:w-auto"
         >
-          Delete
-        </button>
+          Reply via Email
+        </a>
       </div>
     </div>
   );

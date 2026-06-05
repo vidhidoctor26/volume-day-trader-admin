@@ -23,6 +23,14 @@ type RequestOptions = {
   signal?: AbortSignal;
 };
 
+function extractApiErrorMessage(
+  data: ApiErrorResponse & { error?: string; details?: string },
+  statusText: string,
+): string {
+  if (data.errors?.[0]?.message) return data.errors[0].message;
+  return data.error ?? data.message ?? data.details ?? statusText ?? "Request failed";
+}
+
 export async function apiRequest<T>(
   url: string,
   options: RequestOptions = {},
@@ -50,16 +58,51 @@ export async function apiRequest<T>(
   });
 
   const data = (await response.json().catch(() => ({}))) as T &
-    ApiErrorResponse & { error?: string };
+    ApiErrorResponse & { error?: string; details?: string };
 
   if (!response.ok) {
-    const message =
-      data.error ??
-      data.message ??
-      response.statusText ??
-      "Request failed";
+    throw new ApiError(
+      extractApiErrorMessage(data, response.statusText),
+      response.status,
+      data.errors ?? [],
+    );
+  }
 
-    throw new ApiError(message, response.status, data.errors ?? []);
+  return data as T;
+}
+
+/** Multipart upload (do not set Content-Type; browser sets boundary). */
+export async function apiFormRequest<T>(
+  url: string,
+  formData: FormData,
+  options: { method?: string; token?: string | null } = {},
+): Promise<T> {
+  const { method = "POST", token } = options;
+
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method,
+    headers,
+    body: formData,
+    credentials: "include",
+  });
+
+  const data = (await response.json().catch(() => ({}))) as T &
+    ApiErrorResponse & { error?: string; details?: string };
+
+  if (!response.ok) {
+    throw new ApiError(
+      extractApiErrorMessage(data, response.statusText),
+      response.status,
+      data.errors ?? [],
+    );
   }
 
   return data as T;

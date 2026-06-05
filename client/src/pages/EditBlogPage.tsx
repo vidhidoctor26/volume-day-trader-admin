@@ -1,0 +1,343 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
+import BlogConfigPanel from "@/components/blogs/BlogConfigPanel";
+import BlogPageActions from "@/components/blogs/BlogPageActions";
+import BlogPreviewPanel from "@/components/blogs/BlogPreviewPanel";
+import { useDashboardHeaderActions } from "@/components/dashboard/DashboardHeaderActionsContext";
+import {
+  blogRtkApi,
+  BLOG_LIST_TAG,
+  BLOG_TAG,
+  useGenerateContentMutation,
+  useGenerateImageMutation,
+  useGetBlogQuery,
+  useUpdateBlogMutation,
+} from "@/redux/blog/blogApi";
+import {
+  clearCurrentBlog,
+  clearGeneratedContent,
+  clearGeneratedFeaturedImage,
+  markStale,
+  setGeneratedContent,
+  setGeneratedFeaturedImage,
+} from "@/redux/blog/blogSlice";
+import {
+  selectGeneratedContent,
+  selectGeneratedFeaturedImage,
+} from "@/redux/blog/blogSelectors";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { blogService } from "@/services/blog.service";
+import type { FeaturedImage } from "@/types/blog.types";
+import { validateCoverFile } from "@/utils/blogImage.utils";
+import { prepareBlogUpdatePayload } from "@/utils/blogUpdate.utils";
+import { extractTitleFromHtml, slugifyTitle } from "@/utils/blog.utils";
+
+function formatDate(iso?: string): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function rtkErrorMessage(error: unknown): string | null {
+  if (!error || typeof error !== "object" || !("data" in error)) return null;
+  return String((error as { data: unknown }).data);
+}
+
+export default function EditBlogPage() {
+  const { blogId = "" } = useParams<{ blogId: string }>();
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const hydratedIdRef = useRef<string | null>(null);
+  const savedFeaturedRef = useRef<FeaturedImage | null>(null);
+
+  const generatedContent = useAppSelector(selectGeneratedContent);
+  const generatedFeaturedImage = useAppSelector(selectGeneratedFeaturedImage);
+
+  const {
+    data: post,
+    isLoading,
+    isError,
+    error: loadQueryError,
+  } = useGetBlogQuery(blogId, { skip: !blogId });
+
+  const [updateBlog, { isLoading: isSaving }] = useUpdateBlogMutation();
+  const [generateContent, { isLoading: isGeneratingContent, error: genContentError }] =
+    useGenerateContentMutation();
+  const [generateImage, { isLoading: isGeneratingImage, error: genImageError }] =
+    useGenerateImageMutation();
+
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [regeneratePrompt, setRegeneratePrompt] = useState("");
+  const [wordCount, setWordCount] = useState("1000");
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
+  const [featuredImage, setFeaturedImage] = useState<FeaturedImage | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [contentHtml, setContentHtml] = useState("");
+  const [contentKey, setContentKey] = useState(0);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+
+  const actionError =
+    localError ||
+    rtkErrorMessage(loadQueryError) ||
+    rtkErrorMessage(genContentError) ||
+    rtkErrorMessage(genImageError);
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentBlog());
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!post || hydratedIdRef.current === post.id) return;
+    hydratedIdRef.current = post.id;
+    const { editorState } = post;
+    savedFeaturedRef.current = editorState.featuredImage;
+    setTitle(editorState.title);
+    setSlug(post.slug);
+    setRegeneratePrompt(editorState.title);
+    setContentHtml(editorState.content);
+    setContentKey((k) => k + 1);
+    setFeaturedImage(editorState.featuredImage);
+    setCoverUrl(editorState.coverUrl);
+    setCoverFile(null);
+  }, [post]);
+
+  useEffect(() => {
+    if (!generatedContent) return;
+    const extracted = extractTitleFromHtml(generatedContent);
+    if (extracted) {
+      setTitle(extracted);
+      setSlug(slugifyTitle(extracted));
+    }
+    setContentHtml(generatedContent);
+    setContentKey((k) => k + 1);
+    dispatch(clearGeneratedContent());
+  }, [generatedContent, dispatch]);
+
+  useEffect(() => {
+    if (!generatedFeaturedImage) return;
+    setFeaturedImage(generatedFeaturedImage);
+    setCoverUrl(generatedFeaturedImage.url);
+    setCoverFile(null);
+    dispatch(clearGeneratedFeaturedImage());
+  }, [generatedFeaturedImage, dispatch]);
+
+  const buildUpdatePayload = () =>
+    prepareBlogUpdatePayload(
+      {
+        title: title.trim() || "Untitled Blog",
+        slug: slug.trim() || undefined,
+        content: contentHtml,
+        featuredImage: featuredImage ?? undefined,
+      },
+      {
+        featuredImage,
+        savedFeaturedImage: savedFeaturedRef.current,
+        pendingCoverFile: Boolean(coverFile),
+      },
+    );
+
+  const runGenerate = useCallback(async () => {
+    if (!regeneratePrompt.trim()) return;
+    setLocalError(null);
+    try {
+      const result = await generateContent({
+        prompt: regeneratePrompt.trim(),
+        targetWordCount: parseInt(wordCount, 10) || undefined,
+      }).unwrap();
+      dispatch(setGeneratedContent(result.content));
+    } catch {
+      /* RTK error */
+    }
+  }, [regeneratePrompt, wordCount, generateContent, dispatch]);
+
+  const runGenerateCover = useCallback(async () => {
+    const prompt = title.trim() || regeneratePrompt.trim();
+    if (!prompt) return;
+    setLocalError(null);
+    setCoverUploadError(null);
+    try {
+      const result = await generateImage({
+        prompt,
+        previousPublicId: featuredImage?.publicId,
+      }).unwrap();
+      dispatch(setGeneratedFeaturedImage(result.featuredImage));
+    } catch (err) {
+      setCoverUploadError(
+        rtkErrorMessage(err) ?? "Failed to generate cover image.",
+      );
+    }
+  }, [title, regeneratePrompt, featuredImage, generateImage, dispatch]);
+
+  const handleContentChange = (html: string) => {
+    setContentHtml(html);
+    const t = extractTitleFromHtml(html);
+    if (t) setTitle(t);
+  };
+
+  const saveNow = async () => {
+    if (!post?.id || !contentHtml.trim()) return;
+    const payload = buildUpdatePayload();
+    if (Object.keys(payload).length === 0 && !coverFile) {
+      setLocalError("Nothing to save");
+      return;
+    }
+
+    setLocalError(null);
+
+    try {
+      if (coverFile) {
+        setIsUploadingCover(true);
+        const updated = await blogService.updateWithCoverFile(
+          post.id,
+          {
+            title: payload.title,
+            slug: payload.slug,
+            content: payload.content,
+          },
+          coverFile,
+          { savedFeaturedImage: savedFeaturedRef.current },
+        );
+        savedFeaturedRef.current = updated.featuredImage;
+        setFeaturedImage(updated.featuredImage);
+        setCoverUrl(updated.coverUrl);
+        setCoverFile(null);
+        setIsUploadingCover(false);
+      } else {
+        await updateBlog({
+          id: post.id,
+          payload,
+          savedFeaturedImage: savedFeaturedRef.current,
+        }).unwrap();
+      }
+      dispatch(markStale());
+      dispatch(
+        blogRtkApi.util.invalidateTags([
+          { type: BLOG_LIST_TAG, id: "LIST" },
+          { type: BLOG_TAG, id: post.id },
+        ]),
+      );
+      navigate("/dashboard/blogs");
+    } catch (err) {
+      setIsUploadingCover(false);
+      const message = rtkErrorMessage(err) ?? "Failed to save blog";
+      if (coverFile) {
+        setCoverUploadError(message);
+      } else {
+        setLocalError(message);
+      }
+    }
+  };
+
+  const { setActions } = useDashboardHeaderActions();
+
+  useEffect(() => {
+    setActions(
+      <BlogPageActions onSave={() => void saveNow()} saving={isSaving} />,
+    );
+    return () => setActions(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setActions, post?.id, isSaving]);
+
+  if (isLoading && !post) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center text-sm text-[#94a3b8]">
+        Loading blog...
+      </div>
+    );
+  }
+
+  if (isError || !post) {
+    return (
+      <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
+        <p className="text-lg font-semibold text-white">Post not found</p>
+        {actionError && <p className="text-sm text-red-300">{actionError}</p>}
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard/blogs")}
+          className="rounded-xl border border-cyan-400/30 px-5 py-2 text-sm text-cyan-400"
+        >
+          Back to Blogs
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="blog-page-enter space-y-6">
+      {actionError && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {actionError}
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[380px_1fr] xl:grid-cols-[420px_1fr]">
+        <aside>
+          <BlogConfigPanel
+            title={title}
+            onTitleChange={setTitle}
+            slug={slug}
+            onSlugChange={setSlug}
+            regeneratePrompt={regeneratePrompt}
+            onRegeneratePromptChange={setRegeneratePrompt}
+            wordCount={wordCount}
+            onWordCountChange={setWordCount}
+            aiSettingsOpen={aiSettingsOpen}
+            onToggleAiSettings={() => setAiSettingsOpen((o) => !o)}
+            coverUrl={coverUrl}
+            isGenerating={isGeneratingContent}
+            isGeneratingCover={isGeneratingImage}
+            isUploadingCover={isUploadingCover}
+            coverUploadError={coverUploadError}
+            onRegenerateContent={() => void runGenerate()}
+            onUploadCover={(file) => {
+              const validationError = validateCoverFile(file);
+              if (validationError) {
+                setCoverUploadError(validationError);
+                return;
+              }
+              setCoverUploadError(null);
+              if (coverUrl?.startsWith("blob:")) URL.revokeObjectURL(coverUrl);
+              setCoverFile(file);
+              setFeaturedImage(null);
+              setCoverUrl(URL.createObjectURL(file));
+            }}
+            onGenerateCover={() => void runGenerateCover()}
+            onChangeCover={() => {
+              if (coverUrl?.startsWith("blob:")) URL.revokeObjectURL(coverUrl);
+              setCoverUrl(null);
+              setCoverFile(null);
+              setFeaturedImage(null);
+              setCoverUploadError(null);
+            }}
+          />
+        </aside>
+
+        <BlogPreviewPanel
+          hasPreview={Boolean(contentHtml)}
+          title={title}
+          slug={slug}
+          createdDate={formatDate(post.createdAt)}
+          updatedDate={formatDate(post.updatedAt)}
+          coverUrl={coverUrl ?? ""}
+          contentHtml={contentHtml}
+          onContentChange={handleContentChange}
+          contentKey={contentKey}
+          isSaving={isSaving}
+          onCopy={() => void navigator.clipboard.writeText(contentHtml)}
+          onRegenerate={() => void runGenerate()}
+          onSave={() => void saveNow()}
+        />
+      </div>
+    </div>
+  );
+}

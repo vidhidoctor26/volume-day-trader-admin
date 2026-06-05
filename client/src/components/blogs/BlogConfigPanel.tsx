@@ -1,88 +1,106 @@
 import BlogCoverImageSection from "./BlogCoverImageSection";
 
-const CATEGORIES = [
-  "Trading",
-  "Market Analysis",
-  "Volume Analysis",
-  "PTA Indicators",
-  "Education",
-  "News",
-] as const;
-
-const READING_LEVELS = ["Beginner", "Intermediate", "Advanced"] as const;
-
 const WORD_COUNTS = ["500", "1000", "1500", "2000", "3000"] as const;
 
 type BlogConfigPanelProps = {
-  topic: string;
-  onTopicChange: (v: string) => void;
-  category: string;
-  onCategoryChange: (v: string) => void;
-  readingLevel: string;
-  onReadingLevelChange: (v: string) => void;
+  title: string;
+  onTitleChange: (v: string) => void;
+  slug: string;
+  onSlugChange: (v: string) => void;
+  regeneratePrompt: string;
+  onRegeneratePromptChange: (v: string) => void;
   wordCount: string;
   onWordCountChange: (v: string) => void;
-  settingsOpen: boolean;
-  onToggleSettings: () => void;
+  aiSettingsOpen: boolean;
+  onToggleAiSettings: () => void;
   coverUrl: string | null;
   isGenerating: boolean;
-  onGenerate: () => void;
-  onUploadCover: () => void;
+  isGeneratingCover?: boolean;
+  isUploadingCover?: boolean;
+  coverUploadError?: string | null;
+  onRegenerateContent: () => void;
+  onUploadCover: (file: File) => void;
   onGenerateCover: () => void;
   onChangeCover: () => void;
 };
 
 export default function BlogConfigPanel({
-  topic,
-  onTopicChange,
-  category,
-  onCategoryChange,
-  readingLevel,
-  onReadingLevelChange,
+  title,
+  onTitleChange,
+  slug,
+  onSlugChange,
+  regeneratePrompt,
+  onRegeneratePromptChange,
   wordCount,
   onWordCountChange,
-  settingsOpen,
-  onToggleSettings,
+  aiSettingsOpen,
+  onToggleAiSettings,
   coverUrl,
   isGenerating,
-  onGenerate,
+  isGeneratingCover = false,
+  isUploadingCover = false,
+  coverUploadError = null,
+  onRegenerateContent,
   onUploadCover,
   onGenerateCover,
   onChangeCover,
 }: BlogConfigPanelProps) {
-  const charCount = topic.length;
-
   return (
     <div className="blog-glass-card sticky top-4 space-y-6 p-5 sm:p-6 lg:top-6">
-      <div>
-        <label
-          htmlFor="blog-topic"
-          className="mb-3 block text-sm font-medium text-[#94a3b8]"
-        >
-          Blog Topic / Prompt
-        </label>
-        <textarea
-          id="blog-topic"
-          value={topic}
-          onChange={(e) => onTopicChange(e.target.value)}
-          rows={6}
-          placeholder="Write a detailed prompt describing the blog you want to generate..."
-          className="blog-input min-h-[140px] w-full resize-y"
-        />
-        <p className="mt-2 text-right text-xs text-[#94a3b8]">
-          {charCount} characters
-        </p>
+      <div className="space-y-4">
+        <div>
+          <label
+            htmlFor="blog-title"
+            className="mb-2 block text-xs font-medium uppercase tracking-wider text-[#94a3b8]"
+          >
+            Title
+          </label>
+          <input
+            id="blog-title"
+            type="text"
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            className="blog-input w-full"
+            placeholder="Blog title"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="blog-slug"
+            className="mb-2 block text-xs font-medium uppercase tracking-wider text-[#94a3b8]"
+          >
+            URL slug
+          </label>
+          <input
+            id="blog-slug"
+            type="text"
+            value={slug}
+            onChange={(e) => onSlugChange(e.target.value)}
+            className="blog-input w-full font-mono text-sm"
+            placeholder="my-blog-post"
+          />
+        </div>
       </div>
+
+      <BlogCoverImageSection
+        coverUrl={coverUrl}
+        isGenerating={isGeneratingCover}
+        isUploading={isUploadingCover}
+        uploadError={coverUploadError}
+        onUpload={onUploadCover}
+        onGenerateAi={onGenerateCover}
+        onChange={onChangeCover}
+      />
 
       <div className="overflow-hidden rounded-2xl border border-white/[0.08]">
         <button
           type="button"
-          onClick={onToggleSettings}
+          onClick={onToggleAiSettings}
           className="flex w-full items-center justify-between bg-white/[0.02] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.04]"
         >
-          <span>Blog Settings</span>
+          <span>Regenerate content (AI)</span>
           <svg
-            className={`h-4 w-4 text-[#94a3b8] transition-transform ${settingsOpen ? "rotate-180" : ""}`}
+            className={`h-4 w-4 text-[#94a3b8] transition-transform ${aiSettingsOpen ? "rotate-180" : ""}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -93,45 +111,27 @@ export default function BlogConfigPanel({
           </svg>
         </button>
 
-        {settingsOpen && (
+        {aiSettingsOpen && (
           <div className="space-y-4 border-t border-white/[0.08] p-4">
             <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[#94a3b8]">
-                Category
-              </label>
-              <select
-                value={category}
-                onChange={(e) => onCategoryChange(e.target.value)}
-                className="blog-input w-full"
+              <label
+                htmlFor="blog-regen-prompt"
+                className="mb-2 block text-xs font-medium uppercase tracking-wider text-[#94a3b8]"
               >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c} className="bg-[#0f1117]">
-                    {c}
-                  </option>
-                ))}
-              </select>
+                Prompt
+              </label>
+              <textarea
+                id="blog-regen-prompt"
+                value={regeneratePrompt}
+                onChange={(e) => onRegeneratePromptChange(e.target.value)}
+                rows={4}
+                placeholder="Describe what to generate…"
+                className="blog-input min-h-[100px] w-full resize-y"
+              />
             </div>
-
             <div>
               <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[#94a3b8]">
-                Reading Level
-              </label>
-              <select
-                value={readingLevel}
-                onChange={(e) => onReadingLevelChange(e.target.value)}
-                className="blog-input w-full"
-              >
-                {READING_LEVELS.map((l) => (
-                  <option key={l} value={l} className="bg-[#0f1117]">
-                    {l}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-[#94a3b8]">
-                Word Count
+                Target word count
               </label>
               <div className="flex flex-wrap gap-2">
                 {WORD_COUNTS.map((count) => (
@@ -150,25 +150,17 @@ export default function BlogConfigPanel({
                 ))}
               </div>
             </div>
+            <button
+              type="button"
+              onClick={onRegenerateContent}
+              disabled={isGenerating || !regeneratePrompt.trim()}
+              className="blog-btn-generate w-full disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isGenerating ? "Generating…" : "Regenerate content"}
+            </button>
           </div>
         )}
       </div>
-
-      <BlogCoverImageSection
-        coverUrl={coverUrl}
-        onUpload={onUploadCover}
-        onGenerateAi={onGenerateCover}
-        onChange={onChangeCover}
-      />
-
-      <button
-        type="button"
-        onClick={onGenerate}
-        disabled={isGenerating || !topic.trim()}
-        className="blog-btn-generate w-full disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {isGenerating ? "Generating..." : "Generate Blog"}
-      </button>
     </div>
   );
 }

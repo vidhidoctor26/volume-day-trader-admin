@@ -1,20 +1,20 @@
 type BlogPageActionsProps = {
-  onSaveDraft: () => void;
-  onPublish: () => void;
+  onSave: () => void;
+  saving?: boolean;
 };
 
 export default function BlogPageActions({
-  onSaveDraft,
-  onPublish,
+  onSave,
+  saving = false,
 }: BlogPageActionsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-      <button type="button" onClick={onSaveDraft} className="blog-btn-secondary">
-        Save Draft
-      </button>
-      <button type="button" onClick={onPublish} className="blog-btn-primary">
-        Publish
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={onSave}
+      disabled={saving}
+      className="blog-btn-primary disabled:opacity-50"
+    >
+      {saving ? "Saving..." : "Save"}
+    </button>
   );
 }

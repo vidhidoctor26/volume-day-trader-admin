@@ -1,16 +1,21 @@
-import BlogPreviewArticle from "./BlogPreviewArticle";
+import BlogPostMeta from "@/components/blogs/BlogPostMeta";
+import { RichTextEditor } from "@/components/editor";
 
 type BlogPreviewPanelProps = {
   hasPreview: boolean;
   title: string;
-  category: string;
-  readTime: string;
+  slug?: string;
   createdDate: string;
+  updatedDate?: string;
   coverUrl: string;
+  contentHtml: string;
+  onContentChange: (html: string) => void;
+  contentKey?: string | number;
+  isSaving?: boolean;
+  saveLabel?: string;
   onCopy: () => void;
   onRegenerate: () => void;
-  onSaveDraft: () => void;
-  onPublish: () => void;
+  onSave: () => void;
 };
 
 function IconCopy() {
@@ -32,26 +37,44 @@ function IconRefresh() {
 export default function BlogPreviewPanel({
   hasPreview,
   title,
-  category,
-  readTime,
+  slug,
   createdDate,
+  updatedDate,
   coverUrl,
+  contentHtml,
+  onContentChange,
+  contentKey,
+  isSaving = false,
+  saveLabel = "Save",
   onCopy,
   onRegenerate,
-  onSaveDraft,
-  onPublish,
+  onSave,
 }: BlogPreviewPanelProps) {
   return (
     <div className="blog-glass-card flex min-h-[480px] flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto p-5 sm:p-8">
         {hasPreview ? (
-          <BlogPreviewArticle
-            title={title}
-            category={category}
-            readTime={readTime}
-            createdDate={createdDate}
-            coverUrl={coverUrl}
-          />
+          <div className="space-y-4">
+            <BlogPostMeta
+              title={title}
+              slug={slug}
+              createdDate={createdDate}
+              updatedDate={updatedDate}
+              coverUrl={coverUrl}
+            />
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-[#64748b]">
+                Content
+              </p>
+              <RichTextEditor
+                value={contentHtml}
+                onChange={onContentChange}
+                contentKey={contentKey}
+                placeholder="Edit blog content…"
+                minHeight="360px"
+              />
+            </div>
+          </div>
         ) : (
           <div className="blog-preview-fade flex min-h-[360px] flex-col items-center justify-center px-6 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-[#2563eb]/30 bg-[#2563eb]/10 shadow-[0_0_40px_rgba(37,99,235,0.15)]">
@@ -60,10 +83,10 @@ export default function BlogPreviewPanel({
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-white">
-              Your blog preview will appear here
+              Your blog editor will appear here
             </h3>
             <p className="mt-2 max-w-sm text-sm text-[#94a3b8]">
-              Generate a blog to review content before publishing.
+              Generate a blog, then edit and save your content.
             </p>
           </div>
         )}
@@ -75,8 +98,8 @@ export default function BlogPreviewPanel({
             type="button"
             onClick={onCopy}
             className="blog-icon-btn"
-            title="Copy"
-            aria-label="Copy"
+            title="Copy HTML"
+            aria-label="Copy HTML"
           >
             <IconCopy />
           </button>
@@ -90,11 +113,13 @@ export default function BlogPreviewPanel({
             <IconRefresh />
           </button>
           <div className="flex-1" />
-          <button type="button" onClick={onSaveDraft} className="blog-btn-secondary">
-            Save Draft
-          </button>
-          <button type="button" onClick={onPublish} className="blog-btn-primary">
-            Publish
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={isSaving}
+            className="blog-btn-primary disabled:opacity-50"
+          >
+            {isSaving ? "Saving..." : saveLabel}
           </button>
         </div>
       )}
