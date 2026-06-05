@@ -154,7 +154,7 @@ export default function ContactSubmissionsPage() {
         <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.02]">
           <div className="flex items-center gap-3 text-sm text-[#94a3b8]">
             <svg
-              className="h-5 w-5 animate-spin text-tab-active"
+              className="h-5 w-5 animate-spin text-[#94a3b8]"
               fill="none"
               viewBox="0 0 24 24"
               aria-hidden
@@ -190,7 +190,7 @@ export default function ContactSubmissionsPage() {
           <button
             type="button"
             onClick={() => void loadInquiries()}
-            className="mt-4 rounded-xl bg-tab-active px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-tab-active-hover"
+            className="mt-4 rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:border-white/20 hover:bg-white/[0.08]"
           >
             Try again
           </button>

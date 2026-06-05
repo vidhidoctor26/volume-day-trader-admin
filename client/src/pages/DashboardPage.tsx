@@ -212,7 +212,7 @@ export default function DashboardPage() {
               <li>
                 <Link
                   to="/dashboard/blogs/create"
-                  className="block w-full rounded-xl border border-btn-border px-4 py-3 text-left text-sm font-medium text-feature-text no-underline transition-colors hover:border-tab-active/40 hover:text-white"
+                  className="block w-full rounded-xl border btn-outline px-4 py-3 text-left text-sm font-medium text-feature-text no-underline transition-colors hover:border-tab-active/40 hover:text-white"
                 >
                   Create a blog
                 </Link>
@@ -220,7 +220,7 @@ export default function DashboardPage() {
               <li>
                 <Link
                   to="/dashboard/blogs"
-                  className="block w-full rounded-xl border border-btn-border px-4 py-3 text-left text-sm font-medium text-feature-text no-underline transition-colors hover:border-tab-active/40 hover:text-white"
+                  className="block w-full rounded-xl border btn-outline px-4 py-3 text-left text-sm font-medium text-feature-text no-underline transition-colors hover:border-tab-active/40 hover:text-white"
                 >
                   Manage blogs
                 </Link>
@@ -228,7 +228,7 @@ export default function DashboardPage() {
               <li>
                 <Link
                   to="/dashboard/contacts"
-                  className="block w-full rounded-xl border border-btn-border px-4 py-3 text-left text-sm font-medium text-feature-text no-underline transition-colors hover:border-tab-active/40 hover:text-white"
+                  className="block w-full rounded-xl border btn-outline px-4 py-3 text-left text-sm font-medium text-feature-text no-underline transition-colors hover:border-tab-active/40 hover:text-white"
                 >
                   Review inquiries
                 </Link>

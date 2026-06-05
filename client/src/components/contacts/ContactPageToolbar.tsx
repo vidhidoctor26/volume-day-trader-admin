@@ -37,7 +37,7 @@ export default function ContactPageToolbar({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search by name, email, ticket..."
-          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-[#94a3b8]/70 outline-none transition-colors focus:border-tab-active/50 focus:ring-2 focus:ring-tab-active/20"
+          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-[#94a3b8]/70 outline-none transition-colors focus:border-white/20 focus:ring-2 focus:ring-white/10"
         />
       </div>
 
@@ -45,7 +45,7 @@ export default function ContactPageToolbar({
         <select
           value={dateFilter}
           onChange={(e) => onFilterChange(e.target.value as InquiryDateFilter)}
-          className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm text-white outline-none transition-colors focus:border-tab-active/50"
+          className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm text-white outline-none transition-colors focus:border-white/20"
           aria-label="Filter inquiries by date"
         >
           <option value="all" className="bg-[#0d082b]">
@@ -63,7 +63,7 @@ export default function ContactPageToolbar({
           type="button"
           onClick={onRefresh}
           disabled={refreshing}
-          className="crm-btn-secondary inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-white transition-all hover:-translate-y-0.5 hover:border-tab-active/40 hover:shadow-[0_4px_20px_rgb(237_31_36/0.2)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:border-white/15 hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <svg
             className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
@@ -85,7 +85,7 @@ export default function ContactPageToolbar({
         <button
           type="button"
           onClick={onExport}
-          className="crm-btn-secondary inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-white transition-all hover:-translate-y-0.5 hover:border-tab-active/40 hover:shadow-[0_4px_20px_rgb(237_31_36/0.2)]"
+          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:border-white/15 hover:bg-white/[0.05]"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 11.25L12 15.75l4.5-4.5M12 3v12.75" />

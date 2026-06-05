@@ -54,7 +54,7 @@ export default function ContactDetailsPanel({
             </p>
             <a
               href={`mailto:${submission.email}`}
-              className="block text-sm text-tab-active hover:underline"
+              className="block text-sm text-[#94a3b8] transition-colors hover:text-white hover:underline"
             >
               {submission.email}
             </a>
@@ -94,7 +94,7 @@ export default function ContactDetailsPanel({
       <div className="border-t border-white/[0.08] p-4">
         <a
           href={`mailto:${submission.email}?subject=Re: ${encodeURIComponent(submission.ticketNumber)}`}
-          className="crm-btn-primary inline-flex w-full items-center justify-center rounded-xl bg-tab-active px-4 py-2.5 text-sm font-semibold text-white no-underline transition-all hover:-translate-y-0.5 hover:bg-tab-active-hover hover:shadow-[0_4px_24px_rgb(237_31_36/0.4)] sm:w-auto"
+          className="inline-flex w-full items-center justify-center rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white no-underline transition-colors hover:border-white/20 hover:bg-white/[0.08] sm:w-auto"
         >
           Reply via Email
         </a>
