@@ -2,8 +2,10 @@ import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import BlogPostMeta from "@/components/blogs/BlogPostMeta";
+import PageHeader from "@/components/dashboard/PageHeader";
 import { useDashboardHeaderActions } from "@/components/dashboard/DashboardHeaderActionsContext";
 import { useGetBlogQuery } from "@/redux/blog/blogApi";
+import { normalizeBlogStatus } from "@/utils/blogStatus.utils";
 import { clearCurrentBlog } from "@/redux/blog/blogSlice";
 import { useAppDispatch } from "@/redux/hooks";
 
@@ -41,25 +43,31 @@ export default function ViewBlogPage() {
     };
   }, [dispatch]);
 
+  const canEdit = post
+    ? normalizeBlogStatus(post.status) !== "archived"
+    : false;
+
   useEffect(() => {
     setActions(
       <div className="flex items-center gap-2">
         <Link
           to="/dashboard/blogs"
-          className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-sm font-medium text-white no-underline transition-colors hover:border-[#2563eb]/40"
+          className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-sm font-medium text-white no-underline transition-colors hover:border-tab-active/40"
         >
           Back
         </Link>
-        <Link
-          to={`/dashboard/blogs/edit/${blogId}`}
-          className="blog-btn-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold no-underline"
-        >
-          Edit
-        </Link>
+        {canEdit && (
+          <Link
+            to={`/dashboard/blogs/edit/${blogId}`}
+            className="blog-btn-primary inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold no-underline"
+          >
+            Edit
+          </Link>
+        )}
       </div>,
     );
     return () => setActions(null);
-  }, [setActions, blogId]);
+  }, [setActions, blogId, canEdit]);
 
   const errorMessage = rtkErrorMessage(loadQueryError);
 
@@ -92,6 +100,10 @@ export default function ViewBlogPage() {
 
   return (
     <div className="blog-page-enter mx-auto max-w-4xl space-y-6">
+      <PageHeader
+        title="View Blog"
+        description="Read-only preview of this post."
+      />
       <div className="blog-glass-card p-6 sm:p-8">
         <BlogPostMeta
           title={post.title}

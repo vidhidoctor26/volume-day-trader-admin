@@ -1,19 +1,16 @@
 import { useDashboardHeaderActions } from "@/components/dashboard/DashboardHeaderActionsContext";
 import { useAuth } from "@/redux/hooks/useAuth";
+import { formatAdminGreeting } from "@/utils/greeting.utils";
 
 type DashboardHeaderProps = {
-  title: string;
-  subtitle?: string;
   onMenuClick: () => void;
 };
 
-export default function DashboardHeader({
-  title,
-  subtitle,
-  onMenuClick,
-}: DashboardHeaderProps) {
+export default function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const { user, logout } = useAuth();
   const { actions: headerActions } = useDashboardHeaderActions();
+  const displayName = user?.name?.trim() || "Admin";
+  const greeting = formatAdminGreeting(displayName);
 
   return (
     <header className="sticky top-0 z-30 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-card-border/80 bg-page-bg/80 px-4 py-3 backdrop-blur-md sm:gap-4 sm:px-6">
@@ -40,14 +37,9 @@ export default function DashboardHeader({
           </svg>
         </button>
 
-        <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold text-white sm:text-xl">
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="truncate text-sm text-secondary-text">{subtitle}</p>
-          )}
-        </div>
+        <p className="truncate text-xs font-normal text-white sm:text-sm">
+          {greeting}
+        </p>
       </div>
 
       {headerActions && (
@@ -58,9 +50,7 @@ export default function DashboardHeader({
 
       <div className="order-2 flex shrink-0 items-center gap-2 sm:order-3 sm:gap-3">
         <div className="hidden text-right sm:block">
-          <p className="text-sm font-medium text-white">
-            {user?.name ?? "Admin"}
-          </p>
+          <p className="text-sm font-medium text-white">{displayName}</p>
           <p className="max-w-[12rem] truncate text-xs text-secondary-text">
             {user?.email}
           </p>
@@ -70,7 +60,7 @@ export default function DashboardHeader({
           className="flex h-9 w-9 items-center justify-center rounded-full bg-tab-active/20 text-sm font-semibold text-tab-active ring-1 ring-tab-active/30 sm:h-10 sm:w-10"
           aria-hidden
         >
-          {(user?.name ?? "A").charAt(0).toUpperCase()}
+          {displayName.charAt(0).toUpperCase()}
         </div>
 
         <button

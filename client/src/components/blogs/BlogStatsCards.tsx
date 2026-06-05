@@ -9,7 +9,7 @@ type BlogStatsCardsProps = {
 };
 
 function StatIcon({ icon }: { icon: StatItem["icon"] }) {
-  const className = "h-5 w-5 text-[#2563eb]";
+  const className = "h-5 w-5 text-tab-active";
   const props = {
     className,
     fill: "none",
@@ -65,11 +65,11 @@ function StatIcon({ icon }: { icon: StatItem["icon"] }) {
 
 export default function BlogStatsCards({ stats }: BlogStatsCardsProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(37,99,235,0.08)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-[#2563eb]/40 hover:shadow-[0_8px_32px_rgba(37,99,235,0.15)]"
+          className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgb(237_31_36/0.08)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-tab-active/40 hover:shadow-[0_8px_32px_rgb(237_31_36/0.15)]"
         >
           <div className="absolute right-4 top-4 opacity-60 transition-opacity group-hover:opacity-100">
             <StatIcon icon={stat.icon} />

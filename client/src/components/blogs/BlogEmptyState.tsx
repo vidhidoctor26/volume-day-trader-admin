@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 export default function BlogEmptyState() {
   return (
     <div className="blog-page-enter blog-glass-card flex min-h-[320px] flex-col items-center justify-center p-8 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#2563eb]/30 bg-[#2563eb]/10">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-tab-active/30 bg-tab-active/10">
         <svg
-          className="h-8 w-8 text-[#3b82f6]"
+          className="h-8 w-8 text-tab-active"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

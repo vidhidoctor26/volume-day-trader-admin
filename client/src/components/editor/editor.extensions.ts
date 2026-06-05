@@ -15,7 +15,7 @@ export const richTextEditorExtensions: Extensions = [
   Link.configure({
     openOnClick: false,
     HTMLAttributes: {
-      class: "text-[#60a5fa] underline underline-offset-2",
+      class: "text-tab-active underline underline-offset-2",
     },
   }),
   Image.configure({

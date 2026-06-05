@@ -141,8 +141,8 @@ export default function BlogConfigPanel({
                     onClick={() => onWordCountChange(count)}
                     className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
                       wordCount === count
-                        ? "bg-[#2563eb] text-white shadow-[0_0_12px_rgba(37,99,235,0.4)]"
-                        : "border border-white/[0.08] bg-white/[0.02] text-[#94a3b8] hover:border-[#2563eb]/40 hover:text-white"
+                        ? "bg-tab-active text-white shadow-[0_0_12px_rgb(237_31_36/0.4)]"
+                        : "border border-white/[0.08] bg-white/[0.02] text-[#94a3b8] hover:border-tab-active/40 hover:text-white"
                     }`}
                   >
                     {count}

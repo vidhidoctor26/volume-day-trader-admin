@@ -26,7 +26,7 @@ function ToolbarButton({
       onClick={onClick}
       className={`inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
         isActive
-          ? "bg-[#2563eb]/25 text-white"
+          ? "bg-tab-active text-white"
           : "text-[#94a3b8] hover:bg-white/[0.06] hover:text-white"
       }`}
     >

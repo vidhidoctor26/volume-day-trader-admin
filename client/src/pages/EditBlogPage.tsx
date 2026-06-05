@@ -1,18 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import BlogArchivedNotice from "@/components/blogs/BlogArchivedNotice";
+import PageHeader from "@/components/dashboard/PageHeader";
 import BlogConfigPanel from "@/components/blogs/BlogConfigPanel";
-import BlogPageActions from "@/components/blogs/BlogPageActions";
+import BlogPageActions, {
+  type BlogPageActionItem,
+} from "@/components/blogs/BlogPageActions";
 import BlogPreviewPanel from "@/components/blogs/BlogPreviewPanel";
 import { useDashboardHeaderActions } from "@/components/dashboard/DashboardHeaderActionsContext";
 import {
   blogRtkApi,
   BLOG_LIST_TAG,
+  BLOG_STATS_TAG,
   BLOG_TAG,
   useGenerateContentMutation,
   useGenerateImageMutation,
   useGetBlogQuery,
   useUpdateBlogMutation,
+  useUpdateBlogStatusMutation,
 } from "@/redux/blog/blogApi";
 import {
   clearCurrentBlog,
@@ -28,8 +34,9 @@ import {
 } from "@/redux/blog/blogSelectors";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { blogService } from "@/services/blog.service";
-import type { FeaturedImage } from "@/types/blog.types";
+import type { BlogStatus, FeaturedImage } from "@/types/blog.types";
 import { validateCoverFile } from "@/utils/blogImage.utils";
+import { normalizeBlogStatus } from "@/utils/blogStatus.utils";
 import { prepareBlogUpdatePayload } from "@/utils/blogUpdate.utils";
 import { extractTitleFromHtml, slugifyTitle } from "@/utils/blog.utils";
 
@@ -46,6 +53,10 @@ function rtkErrorMessage(error: unknown): string | null {
   if (!error || typeof error !== "object" || !("data" in error)) return null;
   return String((error as { data: unknown }).data);
 }
+
+type SaveOptions = {
+  targetStatus?: Extract<BlogStatus, "draft" | "published">;
+};
 
 export default function EditBlogPage() {
   const { blogId = "" } = useParams<{ blogId: string }>();
@@ -65,6 +76,8 @@ export default function EditBlogPage() {
   } = useGetBlogQuery(blogId, { skip: !blogId });
 
   const [updateBlog, { isLoading: isSaving }] = useUpdateBlogMutation();
+  const [updateBlogStatus, { isLoading: isUpdatingStatus }] =
+    useUpdateBlogStatusMutation();
   const [generateContent, { isLoading: isGeneratingContent, error: genContentError }] =
     useGenerateContentMutation();
   const [generateImage, { isLoading: isGeneratingImage, error: genImageError }] =
@@ -83,6 +96,11 @@ export default function EditBlogPage() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+
+  const postStatus = post ? normalizeBlogStatus(post.status) : "draft";
+  const isArchived = postStatus === "archived";
+  const isDraft = postStatus === "draft";
+  const isBusy = isSaving || isUploadingCover || isUpdatingStatus;
 
   const actionError =
     localError ||
@@ -131,20 +149,120 @@ export default function EditBlogPage() {
     dispatch(clearGeneratedFeaturedImage());
   }, [generatedFeaturedImage, dispatch]);
 
-  const buildUpdatePayload = () =>
-    prepareBlogUpdatePayload(
-      {
-        title: title.trim() || "Untitled Blog",
-        slug: slug.trim() || undefined,
-        content: contentHtml,
-        featuredImage: featuredImage ?? undefined,
-      },
-      {
-        featuredImage,
-        savedFeaturedImage: savedFeaturedRef.current,
-        pendingCoverFile: Boolean(coverFile),
-      },
-    );
+  const invalidateBlogCaches = useCallback(
+    (id: string) => {
+      dispatch(markStale());
+      dispatch(
+        blogRtkApi.util.invalidateTags([
+          { type: BLOG_LIST_TAG, id: "LIST" },
+          { type: BLOG_STATS_TAG, id: "STATS" },
+          { type: BLOG_TAG, id },
+        ]),
+      );
+    },
+    [dispatch],
+  );
+
+  const saveNow = useCallback(
+    async (options?: SaveOptions) => {
+      if (!post?.id || isArchived) return;
+
+      if (!contentHtml.trim()) {
+        setLocalError("Add content before saving.");
+        return;
+      }
+
+      const payload = prepareBlogUpdatePayload(
+        {
+          title: title.trim() || "Untitled Blog",
+          slug: slug.trim() || undefined,
+          content: contentHtml,
+          featuredImage: featuredImage ?? undefined,
+        },
+        {
+          featuredImage,
+          savedFeaturedImage: savedFeaturedRef.current,
+          pendingCoverFile: Boolean(coverFile),
+        },
+      );
+
+      if (options?.targetStatus) {
+        payload.status = options.targetStatus;
+      } else if (isDraft) {
+        payload.status = "draft";
+      }
+
+      if (Object.keys(payload).length === 0 && !coverFile) {
+        setLocalError("Nothing to save");
+        return;
+      }
+
+      setLocalError(null);
+
+      try {
+        if (coverFile) {
+          setIsUploadingCover(true);
+          const updated = await blogService.updateWithCoverFile(
+            post.id,
+            {
+              title: payload.title,
+              slug: payload.slug,
+              content: payload.content,
+              status: payload.status,
+            },
+            coverFile,
+            { savedFeaturedImage: savedFeaturedRef.current },
+          );
+          savedFeaturedRef.current = updated.featuredImage;
+          setFeaturedImage(updated.featuredImage);
+          setCoverUrl(updated.coverUrl);
+          setCoverFile(null);
+          setIsUploadingCover(false);
+        } else {
+          await updateBlog({
+            id: post.id,
+            payload,
+            savedFeaturedImage: savedFeaturedRef.current,
+          }).unwrap();
+        }
+        invalidateBlogCaches(post.id);
+        navigate("/dashboard/blogs");
+      } catch (err) {
+        setIsUploadingCover(false);
+        const message = rtkErrorMessage(err) ?? "Failed to save blog";
+        if (coverFile) {
+          setCoverUploadError(message);
+        } else {
+          setLocalError(message);
+        }
+      }
+    },
+    [
+      post?.id,
+      isArchived,
+      isDraft,
+      contentHtml,
+      title,
+      slug,
+      featuredImage,
+      coverFile,
+      updateBlog,
+      invalidateBlogCaches,
+      navigate,
+    ],
+  );
+
+  const restoreNow = async () => {
+    if (!post?.id || !isArchived) return;
+    setLocalError(null);
+    try {
+      await updateBlogStatus({ id: post.id, status: "published" }).unwrap();
+      invalidateBlogCaches(post.id);
+      navigate("/dashboard/blogs");
+    } catch (err) {
+      setLocalError(rtkErrorMessage(err) ?? "Failed to restore blog");
+    }
+  };
 
   const runGenerate = useCallback(async () => {
     if (!regeneratePrompt.trim()) return;
@@ -184,69 +302,56 @@ export default function EditBlogPage() {
     if (t) setTitle(t);
   };
 
-  const saveNow = async () => {
-    if (!post?.id || !contentHtml.trim()) return;
-    const payload = buildUpdatePayload();
-    if (Object.keys(payload).length === 0 && !coverFile) {
-      setLocalError("Nothing to save");
-      return;
+  const headerActions = useMemo((): BlogPageActionItem[] => {
+    if (isArchived) return [];
+
+    if (isDraft) {
+      return [
+        {
+          label: isBusy ? "Saving..." : "Save Draft",
+          onClick: () => void saveNow({ targetStatus: "draft" }),
+          variant: "secondary",
+          disabled: isBusy,
+          loading: isBusy,
+        },
+        {
+          label: isBusy ? "Publishing..." : "Publish",
+          onClick: () => void saveNow({ targetStatus: "published" }),
+          variant: "publish",
+          disabled: isBusy,
+          loading: isBusy,
+        },
+      ];
     }
 
-    setLocalError(null);
-
-    try {
-      if (coverFile) {
-        setIsUploadingCover(true);
-        const updated = await blogService.updateWithCoverFile(
-          post.id,
-          {
-            title: payload.title,
-            slug: payload.slug,
-            content: payload.content,
-          },
-          coverFile,
-          { savedFeaturedImage: savedFeaturedRef.current },
-        );
-        savedFeaturedRef.current = updated.featuredImage;
-        setFeaturedImage(updated.featuredImage);
-        setCoverUrl(updated.coverUrl);
-        setCoverFile(null);
-        setIsUploadingCover(false);
-      } else {
-        await updateBlog({
-          id: post.id,
-          payload,
-          savedFeaturedImage: savedFeaturedRef.current,
-        }).unwrap();
-      }
-      dispatch(markStale());
-      dispatch(
-        blogRtkApi.util.invalidateTags([
-          { type: BLOG_LIST_TAG, id: "LIST" },
-          { type: BLOG_TAG, id: post.id },
-        ]),
-      );
-      navigate("/dashboard/blogs");
-    } catch (err) {
-      setIsUploadingCover(false);
-      const message = rtkErrorMessage(err) ?? "Failed to save blog";
-      if (coverFile) {
-        setCoverUploadError(message);
-      } else {
-        setLocalError(message);
-      }
-    }
-  };
+    return [
+      {
+        label: isBusy ? "Saving..." : "Save Changes",
+        onClick: () => void saveNow(),
+        variant: "primary",
+        disabled: isBusy,
+        loading: isBusy,
+      },
+      {
+        label: isBusy ? "Publishing..." : "Publish",
+        onClick: () => void saveNow({ targetStatus: "published" }),
+        variant: "publish",
+        disabled: isBusy,
+        loading: isBusy,
+      },
+    ];
+  }, [isArchived, isDraft, isBusy, saveNow]);
 
   const { setActions } = useDashboardHeaderActions();
 
   useEffect(() => {
-    setActions(
-      <BlogPageActions onSave={() => void saveNow()} saving={isSaving} />,
-    );
+    if (isArchived || headerActions.length === 0) {
+      setActions(null);
+      return;
+    }
+    setActions(<BlogPageActions actions={headerActions} />);
     return () => setActions(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setActions, post?.id, isSaving]);
+  }, [setActions, headerActions, isArchived]);
 
   if (isLoading && !post) {
     return (
@@ -272,8 +377,33 @@ export default function EditBlogPage() {
     );
   }
 
+  if (isArchived) {
+    return (
+      <div className="blog-page-enter space-y-6">
+        <PageHeader
+          title="Edit Blog"
+          description="Update content, cover, and SEO."
+        />
+        {actionError && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {actionError}
+          </div>
+        )}
+        <BlogArchivedNotice
+          post={post}
+          onRestore={() => void restoreNow()}
+          restoring={isUpdatingStatus}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="blog-page-enter space-y-6">
+      <PageHeader
+        title="Edit Blog"
+        description="Update content, cover, and SEO."
+      />
       {actionError && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           {actionError}
@@ -332,10 +462,22 @@ export default function EditBlogPage() {
           contentHtml={contentHtml}
           onContentChange={handleContentChange}
           contentKey={contentKey}
-          isSaving={isSaving}
+          isSaving={isBusy}
+          saveLabel={isDraft ? "Publish" : "Save Changes"}
+          saveVariant={isDraft ? "publish" : "primary"}
+          secondaryLabel={isDraft ? "Save Draft" : undefined}
+          secondaryVariant="secondary"
+          onSecondaryAction={
+            isDraft ? () => void saveNow({ targetStatus: "draft" }) : undefined
+          }
+          secondaryDisabled={isBusy}
           onCopy={() => void navigator.clipboard.writeText(contentHtml)}
           onRegenerate={() => void runGenerate()}
-          onSave={() => void saveNow()}
+          onSave={() =>
+            void saveNow(
+              isDraft ? { targetStatus: "published" } : undefined,
+            )
+          }
         />
       </div>
     </div>

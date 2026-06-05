@@ -4,11 +4,13 @@ import type {
   ApiBlog,
   BlogListParams,
   BlogListResponse,
+  BlogStatsResponse,
   CreateBlogPayload,
   DeleteBlogResponse,
   GenerateImageRequest,
   GenerateImageResponse,
   UpdateBlogPayload,
+  UpdateBlogStatusPayload,
 } from "@/types/blog.types";
 import { getPersistedAuth } from "@/utils/authStorage";
 
@@ -25,6 +27,7 @@ function buildQuery(params: BlogListParams): string {
   if (params.page) search.set("page", String(params.page));
   if (params.limit) search.set("limit", String(params.limit));
   if (params.search?.trim()) search.set("search", params.search.trim());
+  if (params.status) search.set("status", params.status);
   if (params.sortBy) search.set("sortBy", params.sortBy);
   if (params.sortOrder) search.set("sortOrder", params.sortOrder);
   const qs = search.toString();
@@ -104,6 +107,19 @@ export const blogApi = {
       `${BLOG_API_PREFIX}/${encodeURIComponent(identifier)}`,
       { method: "DELETE", token: getToken() },
     );
+  },
+
+  updateStatus(identifier: string, payload: UpdateBlogStatusPayload) {
+    return apiRequest<ApiBlog>(
+      `${BLOG_API_PREFIX}/${encodeURIComponent(identifier)}/status`,
+      { method: "PATCH", body: payload, token: getToken() },
+    );
+  },
+
+  getStats() {
+    return apiRequest<BlogStatsResponse>(`${BLOG_API_PREFIX}/stats`, {
+      token: getToken(),
+    });
   },
 
   generateContent(prompt: string, targetWordCount?: number) {

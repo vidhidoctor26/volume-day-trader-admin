@@ -2,10 +2,10 @@ export default function ContactEmptyState() {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="relative">
-        <div className="absolute inset-0 rounded-full bg-[#2563eb]/20 blur-2xl" />
+        <div className="absolute inset-0 rounded-full bg-tab-active/20 blur-2xl" />
         <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03]">
           <svg
-            className="h-12 w-12 text-[#2563eb]/80"
+            className="h-12 w-12 text-tab-active/80"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

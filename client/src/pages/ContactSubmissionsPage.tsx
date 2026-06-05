@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ApiError } from "@/api/http.client";
+import PageHeader from "@/components/dashboard/PageHeader";
 import ContactDetailsPanel from "@/components/contacts/ContactDetailsPanel";
 import ContactEmptyState from "@/components/contacts/ContactEmptyState";
 import ContactInquiryList from "@/components/contacts/ContactInquiryList";
@@ -126,6 +127,13 @@ export default function ContactSubmissionsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const pageHeader = (
+    <PageHeader
+      title="Contact Inquiries"
+      description="Review and manage user inquiries."
+    />
+  );
+
   const toolbar = (
     <ContactPageToolbar
       search={search}
@@ -141,11 +149,12 @@ export default function ContactSubmissionsPage() {
   if (loading && inquiries.length === 0) {
     return (
       <div className="space-y-6">
+        {pageHeader}
         {toolbar}
         <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.02]">
           <div className="flex items-center gap-3 text-sm text-[#94a3b8]">
             <svg
-              className="h-5 w-5 animate-spin text-[#2563eb]"
+              className="h-5 w-5 animate-spin text-tab-active"
               fill="none"
               viewBox="0 0 24 24"
               aria-hidden
@@ -174,13 +183,14 @@ export default function ContactSubmissionsPage() {
   if (error) {
     return (
       <div className="space-y-6">
+        {pageHeader}
         {toolbar}
         <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center">
           <p className="text-sm text-red-300">{error}</p>
           <button
             type="button"
             onClick={() => void loadInquiries()}
-            className="mt-4 rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#3b82f6]"
+            className="mt-4 rounded-xl bg-tab-active px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-tab-active-hover"
           >
             Try again
           </button>
@@ -192,6 +202,7 @@ export default function ContactSubmissionsPage() {
   if (inquiries.length === 0) {
     return (
       <div className="space-y-6">
+        {pageHeader}
         {toolbar}
         <ContactEmptyState />
       </div>
@@ -200,11 +211,12 @@ export default function ContactSubmissionsPage() {
 
   return (
     <div className="space-y-6">
+      {pageHeader}
       {toolbar}
 
       <ContactStatsCards stats={statCards} />
 
-      <div className="grid min-h-[520px] gap-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] shadow-[0_0_40px_rgba(37,99,235,0.06)] backdrop-blur-sm lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className="grid min-h-[520px] gap-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] shadow-[0_0_40px_rgb(237_31_36/0.06)] backdrop-blur-sm lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <div className="max-h-[70vh] border-b border-white/[0.08] lg:max-h-[calc(100vh-16rem)] lg:border-b-0 lg:border-r">
           {filtered.length === 0 ? (
             <p className="p-8 text-center text-sm text-[#94a3b8]">

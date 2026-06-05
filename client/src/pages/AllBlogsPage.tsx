@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 
 import BlogEmptyState from "@/components/blogs/BlogEmptyState";
+import PageHeader from "@/components/dashboard/PageHeader";
 import BlogPageToolbar from "@/components/blogs/BlogPageToolbar";
 import BlogPostsTable from "@/components/blogs/BlogPostsTable";
 import BlogStatsCards from "@/components/blogs/BlogStatsCards";
+import BlogStatusFilter, {
+  type BlogStatusFilterValue,
+} from "@/components/blogs/BlogStatusFilter";
 import {
   useDeleteBlogMutation,
+  useGetBlogStatsQuery,
   useGetBlogsQuery,
+  useUpdateBlogStatusMutation,
 } from "@/redux/blog/blogApi";
 import { clearStale, markStale } from "@/redux/blog/blogSlice";
 import { selectBlogListStale } from "@/redux/blog/blogSelectors";
@@ -23,8 +29,12 @@ export default function AllBlogsPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [listPage, setListPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<BlogStatusFilterValue>("all");
 
   const [deleteBlog] = useDeleteBlogMutation();
+  const [updateBlogStatus] = useUpdateBlogStatusMutation();
+
+  const { data: statsData } = useGetBlogStatsQuery();
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -39,10 +49,11 @@ export default function AllBlogsPage() {
       page: listPage,
       limit: PAGE_SIZE,
       search: debouncedSearch || undefined,
+      status: statusFilter === "all" ? undefined : statusFilter,
       sortBy: "updatedAt" as const,
       sortOrder: "desc" as const,
     }),
-    [listPage, debouncedSearch],
+    [listPage, debouncedSearch, statusFilter],
   );
 
   const { data, isLoading, isFetching, error, refetch } =
@@ -60,13 +71,22 @@ export default function AllBlogsPage() {
   const page = data?.page ?? 1;
   const hasMore = data?.hasMore ?? false;
 
+  const filterCounts = {
+    all: statsData?.total ?? 0,
+    draft: statsData?.draft ?? 0,
+    published: statsData?.published ?? 0,
+    archived: statsData?.archived ?? 0,
+  };
+
   const stats = useMemo(() => computeBlogStats(posts), [posts]);
 
   const errorMessage =
     error && "data" in error ? String(error.data) : null;
 
   const statCards = [
-    { label: "Total Posts", value: total, icon: "document" as const },
+    { label: "Total Posts", value: filterCounts.all, icon: "document" as const },
+    { label: "Drafts", value: filterCounts.draft, icon: "draft" as const },
+    { label: "Published", value: filterCounts.published, icon: "check" as const },
     { label: "This Month", value: stats.thisMonth, icon: "calendar" as const },
   ];
 
@@ -80,6 +100,18 @@ export default function AllBlogsPage() {
     }
   };
 
+  const handleStatusFilterChange = (value: BlogStatusFilterValue) => {
+    setStatusFilter(value);
+    setListPage(1);
+  };
+
+  const pageHeader = (
+    <PageHeader
+      title="All Blogs"
+      description="Manage published, draft, and archived blog posts."
+    />
+  );
+
   const toolbar = (
     <BlogPageToolbar
       search={search}
@@ -89,9 +121,12 @@ export default function AllBlogsPage() {
     />
   );
 
+  const hasAnyBlogs = filterCounts.all > 0;
+
   if (isLoading && posts.length === 0) {
     return (
       <div className="blog-page-enter space-y-6">
+        {pageHeader}
         {toolbar}
         <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.02] text-sm text-[#94a3b8]">
           Loading blogs...
@@ -100,16 +135,17 @@ export default function AllBlogsPage() {
     );
   }
 
-  if (errorMessage && posts.length === 0) {
+  if (errorMessage && posts.length === 0 && !hasAnyBlogs) {
     return (
       <div className="blog-page-enter space-y-6">
+        {pageHeader}
         {toolbar}
         <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center">
           <p className="text-sm text-red-300">{errorMessage}</p>
           <button
             type="button"
             onClick={() => void refetch()}
-            className="mt-4 rounded-xl bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white"
+            className="mt-4 rounded-xl bg-tab-active px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-tab-active-hover"
           >
             Try again
           </button>
@@ -118,9 +154,10 @@ export default function AllBlogsPage() {
     );
   }
 
-  if (total === 0 && !debouncedSearch) {
+  if (!hasAnyBlogs && !debouncedSearch) {
     return (
       <div className="blog-page-enter space-y-6">
+        {pageHeader}
         {toolbar}
         <BlogEmptyState />
       </div>
@@ -129,6 +166,7 @@ export default function AllBlogsPage() {
 
   return (
     <div className="blog-page-enter space-y-6">
+      {pageHeader}
       {toolbar}
       {errorMessage && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
@@ -136,12 +174,32 @@ export default function AllBlogsPage() {
         </div>
       )}
       <BlogStatsCards stats={statCards} />
+      <BlogStatusFilter
+        value={statusFilter}
+        onChange={handleStatusFilterChange}
+        counts={filterCounts}
+      />
       <div className="blog-glass-card overflow-hidden !transform-none">
         <BlogPostsTable
           posts={posts}
           loading={isFetching}
           onDelete={(id) =>
             void handleListMutation(() => deleteBlog(id).unwrap())
+          }
+          onPublish={(id) =>
+            void handleListMutation(() =>
+              updateBlogStatus({ id, status: "published" }).unwrap(),
+            )
+          }
+          onArchive={(id) =>
+            void handleListMutation(() =>
+              updateBlogStatus({ id, status: "archived" }).unwrap(),
+            )
+          }
+          onRestore={(id) =>
+            void handleListMutation(() =>
+              updateBlogStatus({ id, status: "published" }).unwrap(),
+            )
           }
         />
       </div>

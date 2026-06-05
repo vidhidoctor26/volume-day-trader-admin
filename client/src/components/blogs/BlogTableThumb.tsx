@@ -1,9 +1,7 @@
 import { useState } from "react";
 
-import { cn } from "@/lib/utils";
-
-const THUMB_CLASS =
-  "blog-table-thumb h-11 w-[3.25rem] shrink-0 overflow-hidden rounded-lg border border-white/[0.1] bg-white/[0.03]";
+const THUMB_WRAP_CLASS =
+  "blog-table-thumb-wrap shrink-0 overflow-hidden rounded-lg border border-white/[0.1] bg-white/[0.03]";
 
 type BlogTableThumbProps = {
   src: string | null | undefined;
@@ -12,9 +10,9 @@ type BlogTableThumbProps = {
 
 function ImagePlaceholder() {
   return (
-    <div className={cn(THUMB_CLASS, "flex flex-col items-center justify-center gap-0.5")}>
+    <div className="flex h-full w-full flex-col items-center justify-center gap-0.5">
       <svg
-        className="h-4 w-4 text-[#475569]"
+        className="h-4 w-4 shrink-0 text-[#475569]"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -39,20 +37,22 @@ export default function BlogTableThumb({ src, title }: BlogTableThumbProps) {
 
   if (!src || failed) {
     return (
-      <div title={`No cover image for ${title}`}>
+      <div className={THUMB_WRAP_CLASS} title={`No cover image for ${title}`}>
         <ImagePlaceholder />
       </div>
     );
   }
 
   return (
-    <img
-      src={src}
-      alt=""
-      className={cn(THUMB_CLASS, "object-cover")}
-      onError={() => setFailed(true)}
-      loading="lazy"
-      decoding="async"
-    />
+    <div className={THUMB_WRAP_CLASS}>
+      <img
+        src={src}
+        alt=""
+        className="blog-table-thumb-img"
+        onError={() => setFailed(true)}
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
   );
 }

@@ -36,14 +36,14 @@ export default function ContactInquiryList({
               onClick={() => onSelect(item.id)}
               className={`relative flex w-full gap-3 px-4 py-4 text-left transition-all duration-200 ${
                 isSelected
-                  ? "border-l-2 border-l-[#2563eb] bg-[#2563eb]/10 shadow-[inset_0_0_24px_rgba(37,99,235,0.08)]"
+                  ? "border-l-2 border-l-tab-active bg-tab-active/10 shadow-[inset_0_0_24px_rgb(237_31_36/0.08)]"
                   : "border-l-2 border-l-transparent hover:bg-white/[0.04]"
               }`}
             >
               <div
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
                   isSelected
-                    ? "bg-[#2563eb]/25 text-[#93c5fd] ring-1 ring-[#2563eb]/40"
+                    ? "bg-tab-active/25 text-tab-active ring-1 ring-tab-active/40"
                     : "bg-white/[0.06] text-[#94a3b8]"
                 }`}
               >

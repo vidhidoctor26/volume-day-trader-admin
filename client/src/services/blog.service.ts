@@ -8,6 +8,7 @@ import type {
   FeaturedImage,
   GenerateImageRequest,
   UpdateBlogPayload,
+  UpdateBlogStatusPayload,
 } from "@/types/blog.types";
 import {
   featuredImageFromApi,
@@ -17,6 +18,7 @@ import {
 } from "@/utils/blogImage.utils";
 import { prepareBlogUpdatePayload } from "@/utils/blogUpdate.utils";
 import { extractTitleFromHtml } from "@/utils/blog.utils";
+import { normalizeBlogStatus } from "@/utils/blogStatus.utils";
 
 export { getBlogCoverUrl, featuredImageFromApi };
 
@@ -35,6 +37,7 @@ export function mapApiBlogToPost(raw: ApiBlog): BlogPost {
     id: String(raw._id ?? raw.id ?? ""),
     title: raw.title,
     slug: raw.slug,
+    status: normalizeBlogStatus(raw.status),
     coverUrl: getBlogCoverUrl(raw),
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
@@ -116,6 +119,7 @@ export const blogService = {
         pendingCoverFile: false,
       },
     );
+    if (payload.status) body.status = payload.status;
     return blogApi.update(identifier, body).then(mapApiBlogToDetail);
   },
 
@@ -136,6 +140,7 @@ export const blogService = {
         pendingCoverFile: true,
       },
     );
+    if (payload.status) body.status = payload.status;
     return blogApi
       .updateWithFormData(identifier, body, file)
       .then(mapApiBlogToDetail);
@@ -143,6 +148,19 @@ export const blogService = {
 
   delete(identifier: string) {
     return blogApi.delete(identifier) as Promise<DeleteBlogResponse>;
+  },
+
+  updateStatus(
+    identifier: string,
+    status: UpdateBlogStatusPayload["status"],
+  ) {
+    return blogApi
+      .updateStatus(identifier, { status })
+      .then(mapApiBlogToDetail);
+  },
+
+  getStats() {
+    return blogApi.getStats();
   },
 
   generateContent(prompt: string, targetWordCount?: number) {

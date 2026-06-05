@@ -13,6 +13,11 @@ type BlogPreviewPanelProps = {
   contentKey?: string | number;
   isSaving?: boolean;
   saveLabel?: string;
+  saveVariant?: "primary" | "publish";
+  secondaryLabel?: string;
+  secondaryVariant?: "secondary" | "draft" | "archive";
+  onSecondaryAction?: () => void;
+  secondaryDisabled?: boolean;
   onCopy: () => void;
   onRegenerate: () => void;
   onSave: () => void;
@@ -46,10 +51,23 @@ export default function BlogPreviewPanel({
   contentKey,
   isSaving = false,
   saveLabel = "Save",
+  saveVariant = "primary",
+  secondaryLabel,
+  secondaryVariant = "secondary",
+  onSecondaryAction,
+  secondaryDisabled = false,
   onCopy,
   onRegenerate,
   onSave,
 }: BlogPreviewPanelProps) {
+  const saveButtonClass =
+    saveVariant === "publish" ? "blog-btn-publish" : "blog-btn-primary";
+  const secondaryButtonClass =
+    secondaryVariant === "archive"
+      ? "blog-btn-archive"
+      : secondaryVariant === "draft"
+        ? "blog-btn-draft"
+        : "blog-btn-secondary";
   return (
     <div className="blog-glass-card flex min-h-[480px] flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto p-5 sm:p-8">
@@ -77,8 +95,8 @@ export default function BlogPreviewPanel({
           </div>
         ) : (
           <div className="blog-preview-fade flex min-h-[360px] flex-col items-center justify-center px-6 text-center">
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-[#2563eb]/30 bg-[#2563eb]/10 shadow-[0_0_40px_rgba(37,99,235,0.15)]">
-              <svg className="h-10 w-10 text-[#3b82f6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.25} aria-hidden>
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-tab-active/30 bg-tab-active/10 shadow-[0_0_40px_rgb(237_31_36/0.15)]">
+              <svg className="h-10 w-10 text-tab-active" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.25} aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
               </svg>
             </div>
@@ -113,11 +131,21 @@ export default function BlogPreviewPanel({
             <IconRefresh />
           </button>
           <div className="flex-1" />
+          {onSecondaryAction && secondaryLabel && (
+            <button
+              type="button"
+              onClick={onSecondaryAction}
+              disabled={isSaving || secondaryDisabled}
+              className={`${secondaryButtonClass} disabled:opacity-50`}
+            >
+              {secondaryLabel}
+            </button>
+          )}
           <button
             type="button"
             onClick={onSave}
             disabled={isSaving}
-            className="blog-btn-primary disabled:opacity-50"
+            className={`${saveButtonClass} disabled:opacity-50`}
           >
             {isSaving ? "Saving..." : saveLabel}
           </button>

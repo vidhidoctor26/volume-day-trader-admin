@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import BlogGenerationForm from "@/components/blogs/BlogGenerationForm";
+import PageHeader from "@/components/dashboard/PageHeader";
 import { useGenerateBlogMutation } from "@/redux/blog/blogApi";
 import { setCurrentBlog } from "@/redux/blog/blogSlice";
 import { useAppDispatch } from "@/redux/hooks";
@@ -34,13 +35,10 @@ export default function CreateBlogPage() {
 
   return (
     <div className="blog-page-enter mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Create Blog</h1>
-        <p className="mt-1 text-sm text-[#94a3b8]">
-          Generate AI HTML, save to the API, then edit title, slug, content, and
-          cover before saving again.
-        </p>
-      </div>
+      <PageHeader
+        title="Create Blog"
+        description="Generate AI content and create a blog post."
+      />
 
       {errorMessage && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">

@@ -121,7 +121,7 @@ export default function DashboardSidebar({
                           {entry.sectionLabel}
                         </span>
                         {entry.sectionBadge && (
-                          <span className="shrink-0 rounded-full bg-[#2563eb]/20 px-2 py-0.5 text-[10px] font-semibold text-[#60a5fa] shadow-[0_0_12px_rgba(37,99,235,0.35)]">
+                          <span className="shrink-0 rounded-full bg-tab-active/20 px-2 py-0.5 text-[10px] font-semibold text-tab-active shadow-[0_0_12px_rgb(237_31_36/0.35)]">
                             {entry.sectionBadge}
                           </span>
                         )}
@@ -138,7 +138,7 @@ export default function DashboardSidebar({
                           [
                             "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                             isActive
-                              ? "bg-[#2563eb] text-white shadow-[0_0_16px_rgba(37,99,235,0.35)]"
+                              ? "bg-tab-active text-white shadow-[0_0_16px_rgb(237_31_36/0.35)]"
                               : "text-secondary-text hover:bg-pill-bg hover:text-white",
                           ].join(" ")
                         }
